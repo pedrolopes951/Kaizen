@@ -1,8 +1,8 @@
 from kaizen import KaizenApp
 from flask import request
 
-
 kaizen_app = KaizenApp()
+
 
 # Decorator makes funcitons should be called whenm a request is made to the root URL '/' of the Flask
 # I am telling Flask object that when a request comes in with a spcecified URL pattern like '/' index() is called
@@ -20,12 +20,15 @@ def get_user(user_id):
 
 @kaizen_app.app.route('/user', methods=['POST'])
 def create_user():
-    # Logic to create a new user in the database
-    data = request.json  # Assuming JSON data is sent in the request
-    # Process data and save it to the database
-    username = data.get('username')
-    email = data.get('email')
-    return kaizen_app.create_user(username,email)
+    if kaizen_app.isDataTesting():
+        return kaizen_app.create_user()
+    else:    
+        # Logic to create a new user in the database
+        data = request.json  # Assuming JSON data is sent in the request
+        # Process data and save it to the database
+        username = data.get('username')
+        email = data.get('email')
+        return kaizen_app.create_user(username,email)
 
 #TrainingSession 
 @kaizen_app.app.route('/training_sessions')

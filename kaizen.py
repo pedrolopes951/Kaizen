@@ -1,5 +1,5 @@
 import os
-from flask import Flask, abort
+from flask import Flask, abort, request
 from dataModels.dataModels import db, User
 from utils.dataLoaderJson import DataLLoader
 
@@ -14,19 +14,19 @@ class KaizenApp:
 
         db.init_app(self.app)
         with self.app.app_context():
-            self.__cleardb__()
+            self.__cleardb()
             db.create_all()
         # Load the data JSON for testing purposes
         self.users_data = []  # Initialize users_data
-        self.__load_test_data__(pathJson)
+        self.__load_test_data(pathJson)
 
-    def __cleardb__(self) -> None:
+    def __cleardb(self) -> None:
         db_file = os.path.join(self.app.instance_path, 'kaizen.db')
         if os.path.exists(db_file):
             os.chmod(db_file, 0o666)  # Set file to be writable
             os.remove(db_file)
 
-    def __load_test_data__(self, pathJson) -> None:
+    def __load_test_data(self, pathJson) -> None:
         try:
             test_data = DataLLoader(pathJson)
             for user_data in test_data.get_data():
@@ -46,7 +46,23 @@ class KaizenApp:
         else:
             abort(404, f"User with ID {user_id} not found")
 
+    def get_username(self, user_id: int) -> str:
+        user = User.query.get(user_id)
+        if user:
+            return  user.username
+        else:
+            abort(404, f"username with ID {user_id} not found")
+
+    def get_email(self, user_id: int) -> str:
+        user = User.query.get(user_id)
+        if user:
+            return user.email
+        else:
+            abort(404, f"email with ID {user_id} not found")
+
+
     def create_user(self, username: str = '', email: str = '') -> str:
+        print(f"Creating user with username: {username} and email: {email}")
         with self.app.app_context():
             if self.isDataTesting():
                 str_template = "User created with Id: "

@@ -11,7 +11,7 @@ class KaizenApp:
         # Get the absolute path for the database file
         db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance', 'kaizen.db')
         self.app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-
+        self.app.config['SECRET_KEY'] = os.urandom(24)  # Set a random secret key
         db.init_app(self.app)
         with self.app.app_context():
             self.__cleardb()
@@ -60,18 +60,19 @@ class KaizenApp:
         else:
             abort(404, f"email with ID {user_id} not found")
 
-
-    def create_user(self, username: str = '', email: str = '') -> str:
-        print(f"Creating user with username: {username} and email: {email}")
+    def create_user(self, username: str = '', email: str = '') -> tuple:
         with self.app.app_context():
-            if self.isDataTesting():
+            if self.isDataTesting() and not username and not email:
                 str_template = "User created with Id: "
                 str_user = ""
                 for idx, user_data in enumerate(self.users_data):
                     try:
-                        new_user = User()
-                        new_user.username = user_data[0]
-                        new_user.email = user_data[1]
+                        existing_user = User.query.filter(
+                            (User.email == user_data[1]) | (User.username == user_data[0])
+                        ).first()
+                        if existing_user:
+                            continue  # Skip if user already exists
+                        new_user = User(username=user_data[0], email=user_data[1])
                         db.session.add(new_user)
                         db.session.commit()
                         if idx == len(self.users_data) - 1:
@@ -80,15 +81,39 @@ class KaizenApp:
                             str_user += f"{new_user.id},"
                     except Exception as e:
                         raise Exception(f"Error creating new User: {e}")
-                return str_template + str_user
+                return str_template + str_user, 201
             else:
-                new_user = User()
-                new_user.username = username
-                new_user.email = email
-
+                existing_user = User.query.filter(
+                    (User.email == email) | (User.username == username)
+                ).first()
+                if existing_user:
+                    return f"Error: User with username {username} or email {email} already exists.", 400
+                new_user = User(username=username, email=email)
                 db.session.add(new_user)
                 db.session.commit()
-                return f"User created with Id: {new_user.id}"
+                return f"User created with Id: {new_user.id}", 201
+
+            
+    def update_user(self, user_id: int, username: str, email: str) -> str:
+        with self.app.app_context():
+            user = User.query.get(user_id)
+            if user:
+                user.username = username
+                user.email = email
+                db.session.commit()
+                return f"User with Id: {user_id} updated"
+            else:
+                abort(404, f"User with ID {user_id} not found")
+
+    def delete_user(self, user_id: int) -> str:
+        with self.app.app_context():
+            user = User.query.get(user_id)
+            if user:
+                db.session.delete(user)
+                db.session.commit()
+                return f"User with Id: {user_id} deleted"
+            else:
+                abort(404, f"User with ID {user_id} not found")
 
     def run(self):
         self.app.run(debug=True)

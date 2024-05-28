@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>List Training Sessions</title>
+</head>
+<body>
+    <h1>Training Sessions</h1>
+    <ul>
+    {% for session in sessions %}
+        <li>ID: {{ session.id }}, Date: {{ session.date }}</li>
+    {% endfor %}
+    </ul>
+</body>
+</html>

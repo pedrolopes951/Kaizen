@@ -60,5 +60,58 @@ def get_username(user_id):
 def get_email(user_id):
     return jsonify({"email": kaizen_app.get_email(user_id)})
 
+@kaizen_app.app.route('/create_training_session', methods=['GET', 'POST'])
+def create_training_session():
+    if request.method == 'POST':
+        date = request.form.get('date')
+        result, status_code = kaizen_app.create_training_session(date)
+        if status_code == 400:
+            flash(result, 'error')
+        else:
+            flash(result, 'success')
+        return redirect(url_for('create_training_session'))
+    return render_template('create_training_session.html')
+
+@kaizen_app.app.route('/list_training_sessions', methods=['GET'])
+def list_training_sessions():
+    sessions = kaizen_app.list_training_sessions()
+    return render_template('list_training_sessions.html', sessions=sessions)
+
+@kaizen_app.app.route('/create_attendance_record', methods=['GET', 'POST'])
+def create_attendance_record():
+    if request.method == 'POST':
+        user_id = int(request.form.get('user_id'))
+        session_id = int(request.form.get('session_id'))
+        result, status_code = kaizen_app.create_attendance_record(user_id, session_id)
+        if status_code == 400:
+            flash(result, 'error')
+        else:
+            flash(result, 'success')
+        return redirect(url_for('create_attendance_record'))
+    return render_template('create_attendance_record.html')
+
+@kaizen_app.app.route('/list_attendance_records', methods=['GET'])
+def list_attendance_records():
+    records = kaizen_app.list_attendance_records()
+    return render_template('list_attendance_records.html', records=records)
+
+@kaizen_app.app.route('/create_note', methods=['GET', 'POST'])
+def create_note():
+    if request.method == 'POST':
+        user_id = int(request.form.get('user_id'))
+        content = request.form.get('content')
+        result, status_code = kaizen_app.create_note(user_id, content)
+        if status_code == 400:
+            flash(result, 'error')
+        else:
+            flash(result, 'success')
+        return redirect(url_for('create_note'))
+    return render_template('create_note.html')
+
+@kaizen_app.app.route('/list_notes', methods=['GET'])
+def list_notes():
+    notes = kaizen_app.list_notes()
+    return render_template('list_notes.html', notes=notes)
+
 if __name__ == '__main__':
     kaizen_app.run()

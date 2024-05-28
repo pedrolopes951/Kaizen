@@ -1,7 +1,9 @@
 import os
 from flask import Flask, abort, request
-from dataModels.dataModels import db, User
+from dataModels.dataModels import db, User, TrainingSession,AttendanceRecord,Note
 from utils.dataLoaderJson import DataLLoader
+from datetime import datetime
+
 
 class KaizenApp:
     def __init__(self, testingData: bool = True, pathJson='templates/testingData.json') -> None:
@@ -92,6 +94,39 @@ class KaizenApp:
                 db.session.add(new_user)
                 db.session.commit()
                 return f"User created with Id: {new_user.id}", 201
+            
+    def create_training_session(self, date: str) -> str:
+        with self.app.app_context():
+            try:
+                session_date = datetime.strptime(date, '%Y-%m-%d').date()
+                new_session = TrainingSession(date=session_date)
+                db.session.add(new_session)
+                db.session.commit()
+                return f"Training session created with Id: {new_session.id}", 201
+            except Exception as e:
+                raise Exception(f"Error creating new Training Session: {e}")
+
+    def list_training_sessions(self) -> list:
+        with self.app.app_context():
+            sessions = TrainingSession.query.all()
+            return [{"id": session.id, "date": session.date.strftime('%Y-%m-%d')} for session in sessions]
+
+    def create_attendance_record(self, user_id: int, session_id: int) -> str:
+        with self.app.app_context():
+            try:
+                new_record = AttendanceRecord(user_id=user_id, session_id=session_id)
+                db.session.add(new_record)
+                db.session.commit()
+                return f"Attendance record created with Id: {new_record.id}", 201
+            except Exception as e:
+                raise Exception(f"Error creating new Attendance Record: {e}")
+
+    def list_attendance_records(self) -> list:
+        with self.app.app_context():
+            records = AttendanceRecord.query.all()
+            return [{"id": record.id, "user_id": record.user_id, "session_id": record.session_id} for record in records]
+
+
 
             
     def update_user(self, user_id: int, username: str, email: str) -> str:
@@ -114,6 +149,22 @@ class KaizenApp:
                 return f"User with Id: {user_id} deleted"
             else:
                 abort(404, f"User with ID {user_id} not found")
+                
+    def create_note(self, user_id: int, content: str) -> str:
+        with self.app.app_context():
+            try:
+                new_note = Note(user_id=user_id, content=content)
+                db.session.add(new_note)
+                db.session.commit()
+                return f"Note created with Id: {new_note.id}", 201
+            except Exception as e:
+                raise Exception(f"Error creating new Note: {e}")
+
+    def list_notes(self) -> list:
+        with self.app.app_context():
+            notes = Note.query.all()
+            return [{"id": note.id, "user_id": note.user_id, "content": note.content} for note in notes]
+
 
     def run(self):
         self.app.run(debug=True)

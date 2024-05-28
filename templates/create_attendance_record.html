@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Attendance Record</title>
+</head>
+<body>
+    <h1>Create Attendance Record</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul>
+        {% for category, message in messages %}
+          <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    <form action="/create_attendance_record" method="post">
+        <label for="user_id">User ID:</label>
+        <input type="text" id="user_id" name="user_id"><br><br>
+        <label for="session_id">Session ID:</label>
+        <input type="text" id="session_id" name="session_id"><br><br>
+        <input type="submit" value="Create Attendance Record">
+    </form>
+</body>
+</html>

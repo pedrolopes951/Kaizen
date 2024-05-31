@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Delete Note</title>
+</head>
+<body>
+    <h1>Delete Note</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul>
+        {% for category, message in messages %}
+          <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    <form action="/delete_note" method="post">
+        <label for="note_id">Note ID:</label>
+        <input type="text" id="note_id" name="note_id"><br><br>
+        <input type="submit" value="Delete Note">
+    </form>
+</body>
+</html>

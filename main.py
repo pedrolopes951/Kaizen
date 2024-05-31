@@ -113,5 +113,32 @@ def list_notes():
     notes = kaizen_app.list_notes()
     return render_template('list_notes.html', notes=notes)
 
+@kaizen_app.app.route('/user_details/<int:user_id>', methods=['GET'])
+def get_user_details(user_id):
+    return jsonify(kaizen_app.get_user_details(user_id))
+
+@kaizen_app.app.route('/update_note', methods=['GET', 'POST'])
+def update_note_form():
+    if request.method == 'POST':
+        note_id = int(request.form.get('note_id'))
+        content = request.form.get('content')
+        result = kaizen_app.update_note(note_id, content)
+        flash(result, 'success')
+        return redirect(url_for('update_note_form'))
+    return render_template('update_note.html')
+
+@kaizen_app.app.route('/delete_note', methods=['GET', 'POST'])
+def delete_note_form():
+    if request.method == 'POST':
+        note_id = int(request.form.get('note_id'))
+        result = kaizen_app.delete_note(note_id)
+        flash(result, 'success')
+        return redirect(url_for('delete_note_form'))
+    return render_template('delete_note.html')
+
+@kaizen_app.app.route('/training_session_details/<int:session_id>', methods=['GET'])
+def get_training_session_details(session_id):
+    return jsonify(kaizen_app.get_training_session_details(session_id))
+
 if __name__ == '__main__':
     kaizen_app.run()

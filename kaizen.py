@@ -1,9 +1,8 @@
 import os
 from flask import Flask, abort, request
-from dataModels.dataModels import db, User, TrainingSession,AttendanceRecord,Note
+from dataModels.dataModels import db, User, TrainingSession, AttendanceRecord, Note
 from utils.dataLoaderJson import DataLLoader
 from datetime import datetime
-
 
 class KaizenApp:
     def __init__(self, testingData: bool = True, pathJson='templates/testingData.json') -> None:
@@ -39,29 +38,9 @@ class KaizenApp:
             print(f"Error loading test data: {e}")
 
     def isDataTesting(self) -> bool:
-        return self.testingData    
+        return self.testingData
 
-    def get_user(self, user_id: int) -> int:
-        user = User.query.get(user_id)
-        if user:
-            return user_id
-        else:
-            abort(404, f"User with ID {user_id} not found")
-
-    def get_username(self, user_id: int) -> str:
-        user = User.query.get(user_id)
-        if user:
-            return  user.username
-        else:
-            abort(404, f"username with ID {user_id} not found")
-
-    def get_email(self, user_id: int) -> str:
-        user = User.query.get(user_id)
-        if user:
-            return user.email
-        else:
-            abort(404, f"email with ID {user_id} not found")
-
+    # User Management
     def create_user(self, username: str = '', email: str = '') -> tuple:
         with self.app.app_context():
             if self.isDataTesting() and not username and not email:
@@ -94,64 +73,18 @@ class KaizenApp:
                 db.session.add(new_user)
                 db.session.commit()
                 return f"User created with Id: {new_user.id}", 201
-    
-    def get_user_details(self, user_id: int) -> dict:
-        with self.app.app_context():
-            user = User.query.get(user_id)
-            if not user:
-                abort(404, f"User with ID {user_id} not found")
-            attendance_records = AttendanceRecord.query.filter_by(user_id=user_id).all()
-            notes = Note.query.filter_by(user_id=user_id).all()
-            return {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "attendance_records": [{"id": record.id, "session_id": record.session_id} for record in attendance_records],
-                "notes": [{"id": note.id, "content": note.content} for note in notes]
-            }
-    
-    def update_note(self, note_id: int, content: str) -> str:
-        with self.app.app_context():
-            note = Note.query.get(note_id)
-            if note:
-                note.content = content
-                db.session.commit()
-                return f"Note with Id: {note_id} updated"
-            else:
-                abort(404, f"Note with ID {note_id} not found")
-            
-    def create_training_session(self, date: str) -> str:
-        with self.app.app_context():
-            try:
-                session_date = datetime.strptime(date, '%Y-%m-%d').date()
-                new_session = TrainingSession(date=session_date)
-                db.session.add(new_session)
-                db.session.commit()
-                return f"Training session created with Id: {new_session.id}", 201
-            except Exception as e:
-                raise Exception(f"Error creating new Training Session: {e}")
 
-    def list_training_sessions(self) -> list:
-        with self.app.app_context():
-            sessions = TrainingSession.query.all()
-            return [{"id": session.id, "date": session.date.strftime('%Y-%m-%d')} for session in sessions]
+    def get_user(self, user_id: int) -> dict:
+        user = User.query.get(user_id)
+        if user:
+            return {"id": user.id, "username": user.username, "email": user.email}
+        else:
+            abort(404, f"User with ID {user_id} not found")
 
-    def create_attendance_record(self, user_id: int, session_id: int) -> str:
-        with self.app.app_context():
-            try:
-                new_record = AttendanceRecord(user_id=user_id, session_id=session_id)
-                db.session.add(new_record)
-                db.session.commit()
-                return f"Attendance record created with Id: {new_record.id}", 201
-            except Exception as e:
-                raise Exception(f"Error creating new Attendance Record: {e}")
+    def list_users(self) -> list:
+        users = User.query.all()
+        return [{"id": user.id, "username": user.username, "email": user.email} for user in users]
 
-    def list_attendance_records(self) -> list:
-        with self.app.app_context():
-            records = AttendanceRecord.query.all()
-            return [{"id": record.id, "user_id": record.user_id, "session_id": record.session_id} for record in records]
-
-            
     def update_user(self, user_id: int, username: str, email: str) -> str:
         with self.app.app_context():
             user = User.query.get(user_id)
@@ -172,7 +105,94 @@ class KaizenApp:
                 return f"User with Id: {user_id} deleted"
             else:
                 abort(404, f"User with ID {user_id} not found")
-                
+
+    # Training Session Management
+    def create_training_session(self, date: str) -> str:
+        with self.app.app_context():
+            try:
+                session_date = datetime.strptime(date, '%Y-%m-%d').date()
+                new_session = TrainingSession(date=session_date)
+                db.session.add(new_session)
+                db.session.commit()
+                return f"Training session created with Id: {new_session.id}", 201
+            except Exception as e:
+                raise Exception(f"Error creating new Training Session: {e}")
+
+    def get_training_session(self, session_id: int) -> dict:
+        session = TrainingSession.query.get(session_id)
+        if session:
+            return {"id": session.id, "date": session.date.strftime('%Y-%m-%d')}
+        else:
+            abort(404, f"Training session with ID {session_id} not found")
+
+    def list_training_sessions(self) -> list:
+        sessions = TrainingSession.query.all()
+        return [{"id": session.id, "date": session.date.strftime('%Y-%m-%d')} for session in sessions]
+
+    def update_training_session(self, session_id: int, date: str) -> str:
+        with self.app.app_context():
+            session = TrainingSession.query.get(session_id)
+            if session:
+                session.date = datetime.strptime(date, '%Y-%m-%d').date()
+                db.session.commit()
+                return f"Training session with Id: {session_id} updated"
+            else:
+                abort(404, f"Training session with ID {session_id} not found")
+
+    def delete_training_session(self, session_id: int) -> str:
+        with self.app.app_context():
+            session = TrainingSession.query.get(session_id)
+            if session:
+                db.session.delete(session)
+                db.session.commit()
+                return f"Training session with Id: {session_id} deleted"
+            else:
+                abort(404, f"Training session with ID {session_id} not found")
+
+    # Attendance Record Management
+    def create_attendance_record(self, user_id: int, session_id: int) -> str:
+        with self.app.app_context():
+            try:
+                new_record = AttendanceRecord(user_id=user_id, session_id=session_id)
+                db.session.add(new_record)
+                db.session.commit()
+                return f"Attendance record created with Id: {new_record.id}", 201
+            except Exception as e:
+                raise Exception(f"Error creating new Attendance Record: {e}")
+
+    def get_attendance_record(self, record_id: int) -> dict:
+        record = AttendanceRecord.query.get(record_id)
+        if record:
+            return {"id": record.id, "user_id": record.user_id, "session_id": record.session_id}
+        else:
+            abort(404, f"Attendance record with ID {record_id} not found")
+
+    def list_attendance_records(self) -> list:
+        records = AttendanceRecord.query.all()
+        return [{"id": record.id, "user_id": record.user_id, "session_id": record.session_id} for record in records]
+
+    def update_attendance_record(self, record_id: int, user_id: int, session_id: int) -> str:
+        with self.app.app_context():
+            record = AttendanceRecord.query.get(record_id)
+            if record:
+                record.user_id = user_id
+                record.session_id = session_id
+                db.session.commit()
+                return f"Attendance record with Id: {record_id} updated"
+            else:
+                abort(404, f"Attendance record with ID {record_id} not found")
+
+    def delete_attendance_record(self, record_id: int) -> str:
+        with self.app.app_context():
+            record = AttendanceRecord.query.get(record_id)
+            if record:
+                db.session.delete(record)
+                db.session.commit()
+                return f"Attendance record with Id: {record_id} deleted"
+            else:
+                abort(404, f"Attendance record with ID {record_id} not found")
+
+    # Notes Management
     def create_note(self, user_id: int, content: str) -> str:
         with self.app.app_context():
             try:
@@ -183,11 +203,27 @@ class KaizenApp:
             except Exception as e:
                 raise Exception(f"Error creating new Note: {e}")
 
+    def get_note(self, note_id: int) -> dict:
+        note = Note.query.get(note_id)
+        if note:
+            return {"id": note.id, "user_id": note.user_id, "content": note.content}
+        else:
+            abort(404, f"Note with ID {note_id} not found")
+
     def list_notes(self) -> list:
+        notes = Note.query.all()
+        return [{"id": note.id, "user_id": note.user_id, "content": note.content} for note in notes]
+
+    def update_note(self, note_id: int, content: str) -> str:
         with self.app.app_context():
-            notes = Note.query.all()
-            return [{"id": note.id, "user_id": note.user_id, "content": note.content} for note in notes]
-        
+            note = Note.query.get(note_id)
+            if note:
+                note.content = content
+                db.session.commit()
+                return f"Note with Id: {note_id} updated"
+            else:
+                abort(404, f"Note with ID {note_id} not found")
+
     def delete_note(self, note_id: int) -> str:
         with self.app.app_context():
             note = Note.query.get(note_id)
@@ -197,20 +233,6 @@ class KaizenApp:
                 return f"Note with Id: {note_id} deleted"
             else:
                 abort(404, f"Note with ID {note_id} not found")
-                
-    def get_training_session_details(self, session_id: int) -> dict:
-        with self.app.app_context():
-            session = TrainingSession.query.get(session_id)
-            if not session:
-                abort(404, f"Training session with ID {session_id} not found")
-            attendance_records = AttendanceRecord.query.filter_by(session_id=session_id).all()
-            attendees = [User.query.get(record.user_id) for record in attendance_records]
-            return {
-                "id": session.id,
-                "date": session.date.strftime('%Y-%m-%d'),
-                "attendees": [{"id": attendee.id, "username": attendee.username, "email": attendee.email} for attendee in attendees if attendee]
-            }
-
 
     def run(self):
         self.app.run(debug=True)
